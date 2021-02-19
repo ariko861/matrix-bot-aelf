@@ -2,7 +2,7 @@ import { LogService, MatrixClient, MessageEvent, RichReply, UserID } from "matri
 import { runHelloCommand } from "./hello";
 import { runMesseCommand } from "./messe";
 import { runAutoCommand } from "./auto";
-
+import config from "../config";
 import * as htmlEscape from "escape-html";
 
 // The prefix required to trigger the bot. The bot will also respond
@@ -47,6 +47,12 @@ export default class CommandHandler {
         if (event.isRedacted) return; // Ignore redacted events that come through
         if (event.sender === this.userId) return; // Ignore ourselves
         if (event.messageType !== "m.text") return; // Ignore non-text messages
+        
+        // This part is to see if the user is allowed to use the bot.
+        const userPermitted = config.permissions.use;
+        let senderServerAndName = event.sender.split(":");
+        const userIsAllowed = ( userPermitted.includes(event.sender) || userPermitted.includes("*:" + senderServerAndName[1]) || userPermitted.includes("*") );
+        
 
         // Ensure that the event is a command before going on. We allow people to ping
         // the bot as well as using our COMMAND_PREFIX.
@@ -59,6 +65,16 @@ export default class CommandHandler {
 
         // Try and figure out what command the user ran, defaulting to help
         try {
+            if (!userIsAllowed) { // Send a message refusing authorization if user is not allowed
+                const notAuthorized = "Désolé, vous n'avez pas l'autorisation de consulter ce Bot";
+                
+                const text = `${notAuthorized}`;
+                const html = `${htmlEscape(notAuthorized)}`;
+                const reply = RichReply.createFor(roomId, ev, text, html); // Note that we're using the raw event, not the parsed one!
+                reply["msgtype"] = "m.notice"; // Bots should always use notices
+                return this.client.sendMessage(roomId, reply);
+            }
+            
             if (args[0] === "hello") {
                 return runHelloCommand(roomId, event, args, this.client);
             } else if (args[0] === "messe" || args[0] === "evangile" || args[0] === "lecture" || args[0] === "psaume"){
