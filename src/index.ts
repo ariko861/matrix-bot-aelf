@@ -12,6 +12,10 @@ import {promises as fs} from "fs";
 import config from "./config";
 import CommandHandler from "./commands/handler";
 
+const db = require('./sqlite');
+
+db.createCronTable();
+
 // First things first: let's make the logs a bit prettier.
 LogService.setLogger(new RichConsoleLogger());
 
