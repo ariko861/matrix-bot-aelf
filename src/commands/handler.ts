@@ -58,11 +58,25 @@ export default class CommandHandler {
         // the bot as well as using our COMMAND_PREFIX.
         const prefixes = [COMMAND_PREFIX, `${this.localpart}:`, `${this.displayName}:`, `${this.userId}:`];
         const prefixUsed = prefixes.find(p => event.textBody.startsWith(p));
-        if (!prefixUsed) return; // Not a command (as far as we're concerned)
-
-        // Check to see what the arguments were to the command
-        const args = event.textBody.substring(prefixUsed.length).trim().split(' ');
-
+        
+        
+        let args = [];
+        
+        // Try and figure out what command the user ran, defaulting to help
+        try {
+            if (!prefixUsed) {
+                const roomMembers = await this.client.getJoinedRoomMembers(roomId);   
+                if ( roomMembers.length > 2 ) { // Check if the room is a direct message room
+                    return; 
+                }
+                args = event.textBody.trim().split(' ');
+            } else {
+                args = event.textBody.substring(prefixUsed.length).trim().split(' ');
+            }
+        } catch (e) {
+            LogService.error("getJoinedRoomMembers error", e)
+        }
+        
         // Try and figure out what command the user ran, defaulting to help
         try {
             if (!userIsAllowed) { // Send a message refusing authorization if user is not allowed
