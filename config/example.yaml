@@ -29,3 +29,6 @@ permissions:
 profile:
     displayname: "AELF Bot"
     avatar: true
+
+# Log level for bot, INFO | DEBUG | WARN | ERROR
+logLevel: "WARN"

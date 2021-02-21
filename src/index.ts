@@ -21,9 +21,26 @@ db.createCronTable();
 // First things first: let's make the logs a bit prettier.
 LogService.setLogger(new RichConsoleLogger());
 
-// For now let's also make sure to log everything (for debugging)
-LogService.setLevel(LogLevel.DEBUG);
-
+if (!config.logLevel) {
+    // For now let's also make sure to log everything (for debugging)
+    LogService.setLevel(LogLevel.INFO);
+} else {
+    switch ( config.logLevel ) {
+        case "WARN":
+            LogService.setLevel(LogLevel.WARN);
+            break;
+        case "ERROR":
+            LogService.setLevel(LogLevel.ERROR);
+            break;
+        case "DEBUG":
+            LogService.setLevel(LogLevel.DEBUG);
+            break;
+        default:
+            LogService.setLevel(LogLevel.INFO);
+            break;
+    }
+    
+}
 // Print something so we know the bot is working
 LogService.info("index", "Bot starting...");
 

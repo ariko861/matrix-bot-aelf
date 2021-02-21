@@ -19,6 +19,7 @@ interface IConfig {
         displayname: string;
         avatar?: boolean;
     }
+    logLevel: string;
 }
 
 export default <IConfig>config;
