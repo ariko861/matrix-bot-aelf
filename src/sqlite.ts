@@ -18,7 +18,8 @@ const db = new sqlite3.Database(dbPath, function(err){
 
 const dbSchema = `CREATE TABLE IF NOT EXISTS Crons (
         roomId text NOT NULL UNIQUE PRIMARY KEY,
-        time text NOT NULL
+        time text NOT NULL,
+        command text NOT NULL
     );`
 
 module.exports = {
@@ -31,15 +32,44 @@ module.exports = {
         });
     },
     
-    insertCron: function(roomId:string, time:string, callback:any){
-        db.run("INSERT INTO Crons (roomId, time) VALUES ($roomId, $time) ON CONFLICT(roomId) DO UPDATE SET time=excluded.time", {
+    insertCron: function(roomId:string, time:string, command:string, callback:any){
+        db.run("INSERT INTO Crons (roomId, time, command) VALUES ($roomId, $time, $command) ON CONFLICT(roomId) DO UPDATE SET time=excluded.time", {
             $roomId: roomId,
-            $time: time
+            $time: time,
+            $command: command
         }, function(){
             callback();
         });
     },
     
+    getCrons: function(callback:any){
+        db.all("SELECT * FROM Crons", function(err, list) {
+            if (err){
+                LogService.error(err);
+                return;
+            }
+            callback(list);
+        });
+    },    
     
+    deleteCron: function(roomId:string, callback:any){
+        db.run("DELETE FROM Crons WHERE roomId = $roomId", {
+            $roomId: roomId
+        }, function(){
+            callback();
+        });
+    },
+    
+    getRoomCron: function(roomId:string, callback:any){
+        db.get("SELECT time, command FROM Crons WHERE roomId = $roomId", {
+            $roomId: roomId
+        }, function(err, row) {
+            if (err){
+                LogService.error(err);
+                return;
+            }
+            callback(row);
+        });
+    },   
     
 };

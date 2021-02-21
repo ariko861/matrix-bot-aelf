@@ -2,7 +2,6 @@ import { MatrixClient, MentionPill, MessageEvent, MessageEventContent } from "ma
 import * as htmlEscape from "escape-html";
 import { runMesseCommand } from "./messe";
 
-const cron = require('node-cron');
 const db = require('../sqlite');
 
 function formatTime(time) {
@@ -14,54 +13,62 @@ function formatTime(time) {
     return result;
 }
 
+function sendSimpleMessage(client, roomId, message){
+    client.sendMessage(roomId, {
+        body: message,
+        msgtype: "m.notice",
+        format: "org.matrix.custom.html",
+            formatted_body: message,
+    });
+}
 
 export async function runAutoCommand(roomId: string, args: string[], client: MatrixClient) {
-    // The first argument is always going to be us, so get the second argument instead.
-    let dailytime = args[1];
-    if (!dailytime) {
-        var d = new Date();
-        dailytime = d.toLocaleTimeString("fr-FR", {hour12: false});
-    } else {
-       dailytime = formatTime(dailytime);
-       if ( !dailytime ) {
-           let text = `L'heure doit être donnée sous le format 00:00 et comprise entre 00:00 et 23:59`;
-           return client.sendMessage(roomId, {
-               body: text,
-               msgtype: "m.notice",
-               format: "org.matrix.custom.html",
-                   formatted_body: text,
-           });
-           
-       }
+    
+    let cancel_commands = ["cancel", "annuler", "annule", "stop"];
+    function checkDailyTimeAndRegister(dailytime){
+        if (dailytime) {
+            db.insertCron(roomId, dailytime, 'messe', function(){
+                let text = 'Le bot AELF est maintenant programmé pour donner les lectures tous les jours à ' + `${dailytime}`;
+                return sendSimpleMessage(client, roomId, text);
+            });
+        }
     }
     
-    db.insertCron(roomId, dailytime, function(){
-        let text = 'Le bot AELF est maintenant programmé pour donner les lectures tous les jours à ' + `${dailytime}`;
-        let html = 'Le bot AELF est maintenant programmé pour donner les lectures tous les jours à ' + `${dailytime}`;
-        return client.sendMessage(roomId, {
-            body: text,
-            msgtype: "m.notice",
-            format: "org.matrix.custom.html",
-            formatted_body: html,
+    if ( cancel_commands.includes(args[1]) ){
+        db.deleteCron(roomId, function(){
+            return sendSimpleMessage(client, roomId, "L'envoi automatique a été annulé !")
         });
-    });
+    } else {
+        // The first argument is always going to be us, so get the second argument instead.
+        let dailytime = args[1];
+        if (!dailytime) { // si la commande auto est tapée seule
+            db.getRoomCron(roomId, function(row){ // vérifier si un envoi auto est déjà programmé.
+                if (row) {
+                    return sendSimpleMessage(client, roomId, "La commande '" + row.command + "' est programmée pour s'executer tous les jours à " + row.time);
+                } else { // si non, programmer à l'heure actuelle.
+                    let d = new Date();
+                    dailytime = d.toLocaleTimeString("fr-FR", {hour12: false, hour: '2-digit', minute:'2-digit'});
+                    checkDailyTimeAndRegister(dailytime);
+                }
+            });
+        } else {
+            dailytime = formatTime(dailytime);
+            if ( !dailytime ) {
+                return sendSimpleMessage(client, roomId, `L'heure doit être donnée sous le format 00:00 et comprise entre 00:00 et 23:59`);
+                
+            }
+        }
+        checkDailyTimeAndRegister(dailytime);
+//         if (dailytime) {
+//             db.insertCron(roomId, dailytime, 'messe', function(){
+//                 let text = 'Le bot AELF est maintenant programmé pour donner les lectures tous les jours à ' + `${dailytime}`;
+//                 return sendSimpleMessage(client, roomId, text);
+//             });
+//         }
+    }
     
     
-    
-    //let dtime = dailytime.split(':');
-    //dailytime = dtime[0] + ":" + dtime[1] // Pour supprimer les secondes dans l'affichage du temps
-    
-    //if ( dtime[1] === "00" ) dtime[1] = "0";
-    //if ( dtime[0] === "00" ) dtime[0] = "0";
-    //let crontext = dtime[1] + ' ' + dtime[0] + ' * * *';
-    
-    //cron.schedule(crontext, function() {
-    //    return runMesseCommand(roomId, ['messe'], client);
-    //});
-    
-    //return runMesseCommand(roomId, ['messe'], client);
-    
-    
+
 
     
 }

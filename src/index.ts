@@ -11,7 +11,9 @@ import * as path from "path";
 import {promises as fs} from "fs";
 import config from "./config";
 import CommandHandler from "./commands/handler";
+import { runMesseCommand } from "./commands/messe";
 
+const cron = require('node-cron');
 const db = require('./sqlite');
 
 db.createCronTable();
@@ -57,6 +59,27 @@ LogService.info("index", "Bot starting...");
             });
         }
     }
+    
+    cron.schedule('0 1 * * *', function() { // run function everyday at 1am
+        db.getCrons(function(list){ //get all row in Crons table
+            list.forEach(function(row){  // for each row
+                let clock = row.time.split(':');
+                let now = new Date();
+                let timeout = new Date();
+                timeout.setHours(clock[0], clock[1]);
+                if ( timeout < now ) {
+                    timeout.setDate(timeout.getDate() + 1);
+                }
+                let diffTime = Math.abs(timeout.getTime() - now.getTime());
+                setTimeout(function(){
+                    runMesseCommand(row.roomId, ['messe'], client);
+                }, diffTime);
+                LogService.info("timer set in : " + diffTime / 60000 + " minutes for room: " + row.roomId);
+            });
+        });
+    });
+    
+    
 
     // Prepare the command handler
     const commands = new CommandHandler(client);

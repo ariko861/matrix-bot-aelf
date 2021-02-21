@@ -98,9 +98,11 @@ export default class CommandHandler {
             } else {
                 const help = "" +
                     "!aelf messe [tout]     - Afficher les lectures de la messe du jour ( ajouter 'tout' pour obtenir le contenu des textes également ).\n" +
-                    "!aelf evangile     - Afficher l'évangile du jour.\n" +
-                    "!aelf lecture     - Afficher la première lecture du jour.\n" +
-                    "!aelf psaume     - Afficher le psaume de la messe du jour.\n" +
+                    "!aelf evangile         - Afficher l'évangile du jour.\n" +
+                    "!aelf lecture          - Afficher la première lecture du jour.\n" +
+                    "!aelf psaume           - Afficher le psaume de la messe du jour.\n" +
+                    "!aelf auto hh:mm       - Programmer automatiquement la commande messe tous les jours à l'heure donnée.\n" +
+                    "!aelf auto stop        - Annuler l'envoi automatique\n" +
                     "!aelf help             - Afficher ce menu d'aide\n";
 
                 const text = `Menu d'aide:\n${help}`;
